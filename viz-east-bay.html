@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>So Cool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.7.0/d3.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-geo/1.9.1/d3-geo.js"></script>
+</head>
+<body>
+
+<div id="map_holder"></div>
+
+<script>
+    var width = 1450;
+    var height = 1450;
+    var line_scale_factor = 2;
+
+    var svg = d3.select("#map_holder")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    svg.append("rect")
+        .attr("width", "100%")
+        .attr("height", "100%")
+        .attr("fill", "#8cadc5");
+
+    var proj = d3.geoMercator()
+        .center([-122.285,37.8625])
+        .scale(575000);
+
+    var path = d3.geoPath(proj);
+
+    d3.json("../go-bike-sankey/san-francisco.geojson").then(
+        function(sf) {
+
+            svg.append("path")
+                .datum(sf)
+                .attr("d", path)
+                .attr("fill", "#fefcfa");
+
+            d3.csv("../go-bike-sankey/data/output/legs.csv").then(
+                function(linesegments) {
+
+                    var links = [];
+
+                    for(var i=0, len=linesegments.length; i<len; i++) {
+                        if (linesegments[i]['region'] === "East Bay") {
+                            links.push({
+                                type: "LineString",
+                                coordinates: [
+                                    [ linesegments[i]['p1_long'], linesegments[i]['p1_lat'] ],
+                                    [ linesegments[i]['p2_long'], linesegments[i]['p2_lat'] ]
+                                ],
+                                properties: {'Count': linesegments[i]['n'] }
+                            });
+                        }
+
+                    }
+
+                    svg
+                        .selectAll("path")
+                        .data(links)
+                        .enter()
+                        .append("path")
+                        .attr("d", path)
+                        .attr("stroke", "#d64b00")
+                        .attr("stroke-linecap", "round")
+                        .attr("stroke-width", function(d) { return Math.max(0.25, d['properties']['Count'] / (90)); });
+                });
+
+        });
+</script>
+
+</body>
+</html>
