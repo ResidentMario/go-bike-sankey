@@ -8,7 +8,8 @@
 </head>
 <body>
 
-<!-- TODO: this visualization is mysteriously missing a lot of pieces of the network! -->
+<!-- TODO: retrace the shoreline, it's not sufficiently accurate -->
+<!-- TODO: add in Alameda -->
 <div id="map_holder"></div>
 
 <script>
@@ -20,56 +21,74 @@
         .append("svg")
         .attr("width", width)
         .attr("height", height);
-
     svg.append("rect")
         .attr("width", "100%")
         .attr("height", "100%")
-        .attr("fill", "#8cadc5");
+        .attr("fill", "#fefcfa");
 
     var proj = d3.geoMercator()
-        .center([-122.285,37.8625])
+        .center([-122.305,37.8625])
         .scale(575000);
 
     var path = d3.geoPath(proj);
 
-    d3.json("../go-bike-sankey/san-francisco.geojson").then(
-        function(sf) {
+    d3.json("../go-bike-sankey/east-bay.geojson").then(
+        function(east_bay) {
 
             svg.append("path")
-                .datum(sf)
+                .datum(east_bay)
                 .attr("d", path)
-                .attr("fill", "#fefcfa");
+                .attr("fill", "#8cadc5");
 
-            d3.csv("../go-bike-sankey/data/output/legs.csv").then(
-                function(linesegments) {
+            d3.json("../go-bike-sankey/alameda.geojson").then(
+                function(alameda) {
 
-                    var links = [];
-
-                    for(var i=0, len=linesegments.length; i<len; i++) {
-                        if (linesegments[i]['region'] === "East Bay") {
-                            links.push({
-                                type: "LineString",
-                                coordinates: [
-                                    [ linesegments[i]['p1_long'], linesegments[i]['p1_lat'] ],
-                                    [ linesegments[i]['p2_long'], linesegments[i]['p2_lat'] ]
-                                ],
-                                properties: {'Count': linesegments[i]['n'] }
-                            });
-                        }
-
-                    }
-
-                    svg
-                        .selectAll("path")
-                        .data(links)
-                        .enter()
-                        .append("path")
+                    svg.append("path")
+                        .datum(alameda)
                         .attr("d", path)
-                        .attr("stroke", "#d64b00")
-                        .attr("stroke-linecap", "round")
-                        .attr("stroke-width", function(d) { return Math.max(0.25, d['properties']['Count'] / (90)); });
-                });
+                        .attr("fill", "#fefcfa");
 
+                    d3.json("../go-bike-sankey/coast-guard-island.geojson").then(
+                        function(coast_guard_island) {
+
+                            svg.append("path")
+                                .datum(coast_guard_island)
+                                .attr("d", path)
+                                .attr("fill", "#fefcfa");
+
+                            d3.csv("../go-bike-sankey/data/output/legs.csv").then(
+                                function (linesegments) {
+
+                                    var links = [];
+
+                                    for (var i = 0, len = linesegments.length; i < len; i++) {
+                                        if (linesegments[i]['region'] === "East Bay") {
+                                            links.push({
+                                                type: "LineString",
+                                                coordinates: [
+                                                    [linesegments[i]['p1_long'], linesegments[i]['p1_lat']],
+                                                    [linesegments[i]['p2_long'], linesegments[i]['p2_lat']]
+                                                ],
+                                                properties: {'Count': linesegments[i]['n']}
+                                            });
+                                        }
+
+                                    }
+
+                                    svg
+                                        .selectAll("path")
+                                        .data(links)
+                                        .enter()
+                                        .append("path")
+                                        .attr("d", path)
+                                        .attr("stroke", "#d64b00")
+                                        .attr("stroke-linecap", "round")
+                                        .attr("stroke-width", function (d) {
+                                            return Math.max(0.25, d['properties']['Count'] / (80));
+                                        });
+                                });
+                        });
+                });
         });
 </script>
 
